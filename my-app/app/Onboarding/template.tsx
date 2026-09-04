@@ -7,11 +7,7 @@ export default function DashboardTemplate({
 }) {
   return (
     <div>
-      <h2>Dashboard Template</h2>
-
-      <Counter />
-
-      <hr />
+    
 
       {children}
     </div>

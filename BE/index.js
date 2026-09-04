@@ -30,7 +30,7 @@ app.use(
     origin: "http://localhost:3000",
     credentials: true,
     // allowedHeaders: ["Content-Type", "Authorization"],
-  }),
+  })
 );
 // const visitors = {};
 
@@ -70,6 +70,11 @@ app.use(
 //     },
 //   }),
 // );
+app.post("/test", (req, res) => {
+  res.json({
+    message: "POST is working",
+  });
+});
 app.use("/", router);
 // app.get("/cart", (req, res) => {
 //   const user = visitors[req.visitorId];
@@ -103,5 +108,7 @@ connectdb();
 app.use((err, req, res, next) => {
   res.status(500).send({ message: err.message });
 });
-
-app.listen(process.env.PORT, () => {});
+console.log(process.env.PORT, "process.env.PORT");
+app.listen(process.env.PORT, () => {
+  console.log("connnected");
+});
