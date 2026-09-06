@@ -101,7 +101,7 @@ async function addRolesList(req, res) {
   }
 }
 
-async function register(req, res) {
+async function register(req, res, next) {
   try {
     const { name, email, password, role, schoolId } = req.body;
     const idempotencyKey = req?.headers["idempotency-key"];
@@ -216,9 +216,7 @@ async function register(req, res) {
   } catch (error) {
     console.error(error);
 
-    return res.status(500).json({
-      message: "Internal server error",
-    });
+    next(error);
   }
 }
 async function Login(req, res) {

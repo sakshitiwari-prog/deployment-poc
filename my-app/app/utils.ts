@@ -10,7 +10,6 @@ api.interceptors.response.use((res) => {
 }, async (err) => {
     
     const config = err.config   
-    console.log(config,'sdfghgdfesa');
     
         if (err && err?.response?.status === 401) {
         window.location.href = "/Onboarding"
@@ -34,8 +33,7 @@ api.interceptors.response.use((res) => {
     }, 5000);
     try {
         return await api(config)
-        
-    } catch {
+    } finally {
         clearTimeout(timeout)
     }
 })
