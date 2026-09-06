@@ -1,5 +1,5 @@
 const { School } = require("../Schema/School");
-
+const { IdempotencyRegister } = require("../Schema/Idempotency");
 const { schoolUserPair } = require("../Schema/School_User");
 const { roleSchema } = require("../Schema/Role_Permission");
 const { Permission } = require("../Schema/Permission");
@@ -104,14 +104,27 @@ async function addRolesList(req, res) {
 async function register(req, res) {
   try {
     const { name, email, password, role, schoolId } = req.body;
-
+    const idempotencyKey = req?.headers["idempotency-key"];
+    if (!idempotencyKey) {
+      return res.status(400).json({
+        message: "Idempotency-Key required",
+      });
+    }
     // 1. Validate input
     if (!name || !email || !password || !role || !schoolId) {
       return res.status(400).json({
         message: "All fields are required",
       });
     }
-
+    const existInIdempotent = await IdempotencyRegister.findOne({
+      key: idempotencyKey,
+    });
+    if (existInIdempotent) {
+      return res.status(existInIdempotent.statusCode).json({
+        msg: "User already exist",
+        data: existInIdempotent.response,
+      });
+    }
     // 2. Check school
     const school = await School.findById(schoolId);
 
@@ -178,7 +191,18 @@ async function register(req, res) {
       schoolId,
       role,
     });
-
+    await IdempotencyRegister.create({
+      key: idempotencyKey,
+      statusCode: 201,
+      response: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        schoolId: mapping.schoolId,
+        role: mapping.role,
+      },
+      userId: user._id,
+    });
     return res.status(201).json({
       message: "User registered successfully",
       data: {

@@ -86,13 +86,17 @@ export default function Dashboard() {
             const res = await api.post(
               onboardType === "register" ? "/onBoard" : "/login",
               values,
+              {
+                headers: {
+                  "idempotency-key": crypto.randomUUID(),
+                },
+              },
             );
-            console.log(res?.data?.data, "resresres");
             localStorage.setItem("user", JSON.stringify(res?.data?.data));
 
-            onboardType === "register"
-              ? setOnBoardType("login")
-              : router.push(`/Home`);
+            // onboardType === "register"
+            //   ? setOnBoardType("login")
+            //   : router.push(`/Home`);
           } catch (e) {
             console.log(e);
           }
