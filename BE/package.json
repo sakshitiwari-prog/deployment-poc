@@ -3,12 +3,11 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
     "start": "node index.js",
-  "dev": "nodemon --watch index.js --watch Schema --watch services --watch Stream --watch tools index.js"
-  },
+    "dev": "nodemon index.js",
+    "test": "jest"  },
   "keywords": [],
-  "author": "", 
+  "author": "",
   "license": "ISC",
   "description": "",
   "dependencies": {
@@ -31,6 +30,7 @@
     "url": "^0.11.4"
   },
   "devDependencies": {
+    "jest": "^30.5.1",
     "nodemon": "^3.1.14"
   }
 }
