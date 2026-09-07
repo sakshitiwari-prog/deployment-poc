@@ -37,7 +37,7 @@ async function addSchoolList(req, res) {
 }
 async function getPermissionList(req, res) {
   try {
-    const result = await Permission.find({});
+    const result = await Permission.find();
     res.json({ data: result });
   } catch (e) {
     console.log(e);
