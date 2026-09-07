@@ -12,14 +12,16 @@ const {
   addPermissionList,
   addRolesList,
 } = require("../Controller/school");
+const limiter=require("../Middleware/rateLimiter")
 const router = express.Router();
+
 
 router.get("/schools", getSchoolList);
 router.get("/user-info", Authenticate, Authorize("users:read"), userInfo);
 router.post("/schools", addSchoolList);
 router.get("/roles", getRolesList);
 router.post("/roles", addRolesList);
-router.get("/permission", getPermissionList);
+router.get("/permission",limiter, getPermissionList);
 router.post("/permission", addPermissionList);
 
 router.post("/role-permission", addRolePermissionList);
