@@ -10,6 +10,7 @@ const multer = require("multer");
 const app = express();
 const dotenv = require("dotenv");
 dotenv.config();
+// mongoose import
 const mongoose = require("mongoose");
 app.use(cookieParser());
 async function connectdb() {
