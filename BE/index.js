@@ -10,13 +10,14 @@ const multer = require("multer");
 const app = express();
 const dotenv = require("dotenv");
 dotenv.config();
-// mongoose import
+// mongoose 
 const mongoose = require("mongoose");
 app.use(cookieParser());
 async function connectdb() {
   try {
     await mongoose.connect(process.env.MONGO_URI);
   } catch (e) {
+    console.log("error in connecting to db");
     console.log(e);
   }
 }
