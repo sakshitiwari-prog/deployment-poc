@@ -1,1 +1,30 @@
+name: CI
 
+on:
+  push:
+    branches: [master]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # Backend
+      - name: Install backend dependencies
+        working-directory: ./BE
+        run: npm install
+
+      - name: Run backend tests
+        working-directory: ./BE
+        run: npm test
+
+      # Frontend
+      - name: Install frontend dependencies
+        working-directory: ./FE
+        run: npm install
+
+      - name: Build frontend
+        working-directory: ./FE
+        run: npm run build
