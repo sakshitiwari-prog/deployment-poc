@@ -56,6 +56,7 @@ async function addPermissionList(req, res) {
     throw e;
   }
 }
+// start from here writing test cases
 async function addRolePermissionList(req, res) {
   try {
     const { role, permission } = req.body;
