@@ -1,25 +1,35 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
-import { Formik } from "formik";
+
 import { useEffect, useState } from "react";
 import { api } from "../utils";
-import * as Yup from "yup";
 import { useRouter } from "next/navigation";
+
 export default function Dashboard() {
   const router = useRouter();
-  const user = localStorage.getItem("user");
-  const modifiedUser = JSON.parse(user ?? "");
+
+  const [user, setUser] = useState<any>(null);
+
   async function getUserInfo() {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const userInfo: any = await api.get("/user-info");
 
     console.log(userInfo, "modifiedList");
   }
+
   useEffect(() => {
+    const storedUser = localStorage.getItem("user");
+
+    if (storedUser) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setUser(JSON.parse(storedUser));
+    }
+
     getUserInfo();
   }, []);
+
   return (
     <>
-      <p>{modifiedUser?.email}</p>
+      <p>{user?.email}</p>
     </>
   );
 }
