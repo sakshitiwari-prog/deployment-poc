@@ -18,6 +18,10 @@ jobs:
 
       - name: Run backend tests
         working-directory: ./BE
+        env:
+          MONGO_URI: ${{ secrets.MONGO_URI }}
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
+          PORT: ${{ vars.PORT }}
         run: npm test
 
       # Frontend
@@ -27,4 +31,6 @@ jobs:
 
       - name: Build frontend
         working-directory: ./my-app
+        env:
+          NEXT_PUBLIC_API_URL: ${{ vars.NEXT_PUBLIC_API_URL }}
         run: npm run build
