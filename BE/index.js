@@ -27,12 +27,16 @@ app.use(express.json());
 app.use(express.urlencoded());
 app.use(cookieParser());
 // cors middleware
+const allowedOrigins = [
+    "http://localhost:3000",
+    "http://3.84.180.85:3000",
+];
+
 app.use(
-  cors({
-    origin: "http://localhost:3000",
-    credentials: true,
-    // allowedHeaders: ["Content-Type", "Authorization"],
-  }),
+    cors({
+        origin: allowedOrigins,
+        credentials: true,
+    })
 );
 // const visitors = {};
 
