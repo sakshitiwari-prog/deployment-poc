@@ -114,7 +114,7 @@ connectdb();
 app.use((err, req, res, next) => {
   res.status(500).send({ message: err.message });
 });
-console.log(process.env.PORT, "process.env.PORT");
-app.listen(process.env.PORT, () => {
+console.log(process.env.BE_PORT, "process.env.BE_PORT");
+app.listen(process.env.BE_PORT, () => {
   console.log("connnected");
 });
