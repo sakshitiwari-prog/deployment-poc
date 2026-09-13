@@ -29,7 +29,7 @@ app.use(cookieParser());
 // cors middleware
 const allowedOrigins = [
     "http://localhost:3000",
-    "http://3.88.2.56:3000",
+    "http://3.85.143.140:3000",
 ];
 
 app.use(
