@@ -109,8 +109,8 @@ app.use("/", router);
 //     cart: user.carts,
 //   });
 // });
+
 connectdb();
-// error middleware
 app.use((err, req, res, next) => {
   res.status(500).send({ message: err.message });
 });
