@@ -11,6 +11,7 @@ jobs:
   # =========================
   build:
     runs-on: ubuntu-latest
+    environment: local
 
     steps:
       - uses: actions/checkout@v4
@@ -46,36 +47,68 @@ jobs:
   deploy:
     needs: build
     runs-on: ubuntu-latest
+    environment: local
 
     steps:
 
       - name: Deploy to EC2
         uses: appleboy/ssh-action@v1.2.0
+
+        env:
+          MONGO_URI: ${{ secrets.MONGO_URI }}
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
+          PORT: ${{ vars.PORT }}
+          NEXT_PUBLIC_API_URL: ${{ vars.NEXT_PUBLIC_API_URL }}
+
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_SSH_KEY }}
-   
+
+          envs: MONGO_URI,JWT_SECRET,PORT,NEXT_PUBLIC_API_URL
+
           script: |
             cd /home/ec2-user/backend/deployment-poc
 
             echo "Pulling latest code..."
             git pull origin master
 
-            echo "Deploying backend..."
+            # =========================
+            # Backend
+            # =========================
+            echo "Creating backend environment file..."
+
             cd BE
+
+            cat > .env <<EOF
+            MONGO_URI=$MONGO_URI
+            JWT_SECRET=$JWT_SECRET
+            PORT=$PORT
+            EOF
+
+            echo "Installing backend dependencies..."
             npm install
 
-            pm2 restart backend || pm2 start npm --name backend -- start
+            echo "Restarting backend..."
+            pm2 restart backend --update-env || pm2 start npm --name backend -- start
 
+            # =========================
+            # Frontend
+            # =========================
             echo "Deploying frontend..."
+
             cd ../my-app
+
             npm install
 
-            export NEXT_PUBLIC_API_URL="${{ vars.NEXT_PUBLIC_API_URL }}"
+            export NEXT_PUBLIC_API_URL="$NEXT_PUBLIC_API_URL"
 
+            echo "Building frontend..."
             npm run build
 
-            pm2 restart frontend || pm2 start npm --name frontend -- start
+            echo "Restarting frontend..."
+            pm2 restart frontend --update-env || pm2 start npm --name frontend -- start
+
+            pm2 save
 
             echo "Deployment completed successfully!"
