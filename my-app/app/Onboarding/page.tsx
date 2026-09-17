@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 "use client";
 import { Formik } from "formik";
 import { useEffect, useMemo, useState } from "react";
@@ -35,19 +36,26 @@ export default function Dashboard() {
     console.log(modifiedList, "modifiedList");
     setSchools(modifiedList);
   }
-  async function getRolesList() {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const roleList: any = await api.get("/roles");
+  const [selectedSchool, setSelectedSchool] = useState("");
 
-    const modifiedList = roleList.data.data.map(
-      (item: { name: string; _id: string }) => ({
+async function getRolesList(organizationId: string) {
+  if (!organizationId) {
+    setRoleList([]);
+    return;
+  }
+  try {
+    const roleList = await api.get(`/roles/${organizationId}`);
+    setRoleList(
+      roleList.data.data.map((item: { name: string; _id: string }) => ({
         name: item.name,
         value: item._id,
-      }),
+      }))
     );
-    console.log(modifiedList, "modifiedList");
-    setRoleList(modifiedList);
+  } catch (e) {
+    console.log(e);
+    setRoleList([]);
   }
+}
   const Schema = (type: string) => {
     return Yup.object().shape({
       name:
@@ -68,8 +76,11 @@ export default function Dashboard() {
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     getSchoolList();
-    getRolesList();
   }, []);
+  useEffect(() => {
+    const school=selectedSchool
+  getRolesList(school);
+}, [selectedSchool]);
   function onBoardTypeSetter(type: string, resetForm) {
     setOnBoardType(type);
     resetForm();
@@ -94,9 +105,9 @@ export default function Dashboard() {
             );
             localStorage.setItem("user", JSON.stringify(res?.data?.data));
 
-            // onboardType === "register"
-            //   ? setOnBoardType("login")
-            //   : router.push(`/Home`);
+            onboardType === "register"
+              ? setOnBoardType("login")
+              : router.push(`/Home`);
           } catch (e) {
             console.log(e);
           }
@@ -107,6 +118,7 @@ export default function Dashboard() {
           errors,
           touched,
           handleChange,
+          setFieldValue,
           handleBlur,
           resetForm,
           handleSubmit,
@@ -132,6 +144,7 @@ export default function Dashboard() {
                 login
               </button>
             </div>
+
             {onboardType == "register" && (
               <div className=" flex flex-col gap-2">
                 <div className="flex gap-2 items-center">
@@ -207,7 +220,11 @@ export default function Dashboard() {
                 <label id="schoolId">School:</label>
                 <select
                   name="schoolId"
-                  onChange={handleChange}
+                  onChange={(e) => {
+    handleChange(e);
+    setSelectedSchool(e.target.value);
+    setFieldValue("role", "");      // clear stale role from the previous org
+  }}
                   onBlur={handleBlur}
                   className="border p-1"
                   value={values.schoolId}
