@@ -32,6 +32,7 @@ const allowedOrigins = [
     "http://3.85.143.140:3000",
 ];
 
+
 app.use(
     cors({
         origin: allowedOrigins,
@@ -79,6 +80,18 @@ app.use(
 app.post("/test", (req, res) => {
   res.json({
     message: "POST is working",
+  });
+});
+app.get("/api/server-info", (req, res) => {
+  res.json({
+    server: process.env.SERVER_NAME || "Unknown",
+    hostname: require("os").hostname(),
+    message: "Request handled successfully",
+  });
+});
+app.get("/health", (req, res) => {
+  res.status(200).json({
+    status: "healthy",
   });
 });
 app.use("/", router);

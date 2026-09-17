@@ -1,9 +1,10 @@
 const { School } = require("../Schema/School");
 const { IdempotencyRegister } = require("../Schema/Idempotency");
 const { schoolUserPair } = require("../Schema/School_User");
-const { roleSchema } = require("../Schema/Role_Permission");
+const { RolePermissionSchema } = require("../Schema/Role_Permission");
 const { Permission } = require("../Schema/Permission");
 const { Role } = require("../Schema/Role");
+const mongoose = require("mongoose");
 const { schoolUser } = require("../Schema/User");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
@@ -47,6 +48,7 @@ async function getPermissionList(req, res) {
 
 async function addPermissionList(req, res) {
   try {
+    console.log( req.body,' req.body')
     const { name } = req.body;
     const result = await Permission.create({ name });
     res.json({ data: result });
@@ -59,9 +61,9 @@ async function addPermissionList(req, res) {
 // start from here writing test cases
 async function addRolePermissionList(req, res) {
   try {
-    const { role, permission } = req.body;
-    const result = await roleSchema.findOneAndUpdate(
-      { role }, // 1. Filter: Find by this role
+    const { role, permission,organization  } = req.body;
+    const result = await RolePermissionSchema.findOneAndUpdate(
+      { role, organization }, // 1. Filter: Find by this role
       { $set: { permission } }, // 2. Update: Set the new permissions
       {
         returnDocument: "after", // 3. Option: Return the modified/created document
@@ -81,19 +83,24 @@ async function addRolePermissionList(req, res) {
     throw e;
   }
 }
-async function getRolesList(req, res) {
+async function getRolesList(req, res, next) {
   try {
-    const result = await Role.find({});
+    const { organization } = req.params;
+
+    if (!mongoose.Types.ObjectId.isValid(organization)) {
+      return res.status(400).json({ msg: "Invalid organization id" });
+    }
+
+    const result = await Role.find({ organization });
     res.json({ data: result });
   } catch (e) {
-    console.log(e);
-    throw e;
+    next(e);
   }
 }
 async function addRolesList(req, res) {
   try {
-    const { name, email } = req.body;
-    const result = await Role.create({ name });
+    const { name, organization } = req.body;
+    const result = await Role.create({ name ,organization});
     res.json({ data: result });
   } catch (e) {
     console.log(e);
@@ -220,63 +227,68 @@ async function register(req, res, next) {
     next(error);
   }
 }
-async function Login(req, res) {
+async function Login(req, res, next) {
   try {
     const { email, password, role, schoolId } = req.body;
 
-    // 1. Find user
-    const user = await schoolUser.findOne({
-      email,
-    });
+    // 0. Validate input
+    if (!email || !password || !schoolId || !role) {
+      return res.status(400).json({ msg: "All fields are required" });
+    }
+    if (
+      !mongoose.Types.ObjectId.isValid(schoolId) ||
+      !mongoose.Types.ObjectId.isValid(role)
+    ) {
+      return res.status(400).json({ msg: "Invalid organization or role id" });
+    }
 
+    // 1. Find user
+    const user = await schoolUser.findOne({ email });
     if (!user) {
-      return res.status(401).json({
-        msg: "Invalid credentials",
-      });
+      return res.status(401).json({ msg: "Invalid credentials" });
     }
 
     // 2. Check password
     const isPasswordCorrect = await bcrypt.compare(password, user.password);
-
     if (!isPasswordCorrect) {
-      return res.status(401).json({
-        msg: "Invalid credentials",
-      });
+      return res.status(401).json({ msg: "Invalid credentials" });
     }
 
-    // 3. Check user's relationship with school + role
-    const userSchool = await schoolUserPair.findOne({
+    // 3. Verify membership — organization first, then role
+    const membership = await schoolUserPair.findOne({
       userId: user._id,
       schoolId,
-      role,
     });
 
-    if (!userSchool) {
+    if (!membership) {
       return res.status(403).json({
-        msg: "User is not associated with this school or role",
+        msg: "User is not a member of this organization",
       });
     }
 
-    // 4. Create JWT
+    if (membership.role.toString() !== role) {
+      return res.status(403).json({
+        msg: "User does not have this role in this organization",
+      });
+    }
+
+    // 4. Create JWT — IDs only, no email
     const token = jwt.sign(
       {
         id: user._id,
-        email: user.email,
-        role: userSchool.role,
-        schoolId: userSchool.schoolId,
+        role: membership.role,
+        schoolId: membership.schoolId,
       },
       process.env.JWT_SECRET,
-      {
-        expiresIn: "1h",
-      },
+      { expiresIn: "1h" }
     );
 
-    // 5. Store JWT in cookie
+    // 5. Cookie
     res.cookie("token", token, {
       httpOnly: true,
       maxAge: 60 * 60 * 1000,
       sameSite: "lax",
-      secure: false, // true in production HTTPS
+      secure: process.env.NODE_ENV === "production",
     });
 
     return res.status(200).json({
@@ -284,16 +296,12 @@ async function Login(req, res) {
       data: {
         id: user._id,
         email: user.email,
-        schoolId: userSchool.schoolId,
-        role: userSchool.role,
+        schoolId: membership.schoolId,
+        role: membership.role,
       },
     });
   } catch (error) {
-    console.error(error);
-
-    return res.status(500).json({
-      msg: "Internal server error",
-    });
+    next(error);
   }
 }
 

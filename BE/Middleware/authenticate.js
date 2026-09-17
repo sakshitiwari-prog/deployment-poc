@@ -1,12 +1,12 @@
 const jwt = require("jsonwebtoken");
 
-const { roleSchema } = require("../Schema/Role_Permission");
+const { RolePermissionSchema } = require("../Schema/Role_Permission");
 function Authenticate(req, res, next) {
   try {
     const token = req?.cookies?.token;
 
     if (!token) {
-      res.status(401).json({
+      return res.status(401).json({
         msg: "token missing",
       });
     }
@@ -24,9 +24,15 @@ function Authenticate(req, res, next) {
 function Authorize(...roles) {
   return async (req, res, next) => {
     try {
-      const roleInfo = await roleSchema
-        .findOne({ role: req.user?.role })
-        .populate("permission");
+      console.log('====================================');
+      console.log(req.user,'req.user');
+      console.log('====================================');
+     const roleInfo = await RolePermissionSchema
+  .findOne({
+    role: req.user.role,
+    organization: req.user.schoolId,       // scope to the token's tenant
+  })
+  .populate("permission");
       if (!roleInfo) {
         return res.status(403).json({
           msg: "Specific role not found",
