@@ -8,6 +8,7 @@ const promiseFs = require("fs/promises");
 const cors = require("cors");
 const multer = require("multer");
 const app = express();
+const {connectRedis,redisClient}=require("./redis")
 const dotenv = require("dotenv");
 dotenv.config();
 // mongoose 
@@ -94,6 +95,7 @@ app.get("/health", (req, res) => {
     status: "healthy",
   });
 });
+
 app.use("/", router);
 // app.get("/cart", (req, res) => {
 //   const user = visitors[req.visitorId];
@@ -122,12 +124,33 @@ app.use("/", router);
 //     cart: user.carts,
 //   });
 // });
+app.get("/redis-test", async (req, res) => {
+  try {
+    await redisClient.set("name", "Sakshi");
 
+    const value = await redisClient.get("name");
+
+    res.json({
+      message: "Redis working",
+      value,
+    });
+  } catch (error) {
+    res.status(500).json({
+      message: "Redis error",
+      error: error.message,
+    });
+  }
+});
 connectdb();
+
 app.use((err, req, res, next) => {
   res.status(500).send({ message: err.message });
 });
-console.log(process.env.BE_PORT, "process.env.BE_PORT");
+connectRedis().then(()=>{
 app.listen(process.env.BE_PORT, () => {
   console.log("connnected");
 });
+}).catch((e)=>{
+  console.log(e);
+  
+})

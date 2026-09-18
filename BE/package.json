@@ -29,6 +29,7 @@
     "mongoose": "^9.7.2",
     "multer": "^2.2.0",
     "pdf-parse": "^2.4.5",
+    "redis": "^6.2.1",
     "url": "^0.11.4"
   },
   "devDependencies": {

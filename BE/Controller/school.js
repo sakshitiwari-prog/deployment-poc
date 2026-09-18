@@ -6,6 +6,8 @@ const { Permission } = require("../Schema/Permission");
 const { Role } = require("../Schema/Role");
 const mongoose = require("mongoose");
 const { schoolUser } = require("../Schema/User");
+
+const {redisClient}=require("../redis")
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 async function getSchoolList(req, res) {
@@ -90,8 +92,17 @@ async function getRolesList(req, res, next) {
     if (!mongoose.Types.ObjectId.isValid(organization)) {
       return res.status(400).json({ msg: "Invalid organization id" });
     }
-
+    const cacheKey=`roles:${organization}`
+    const cacheRoles=await redisClient.get(cacheKey)
+    
+    console.log(cacheRoles,cacheKey,'cacheRoles')
+    if(cacheRoles){
+      return res.json({
+        data:JSON.parse(cacheRoles)
+      })
+    }
     const result = await Role.find({ organization });
+    await redisClient.set(cacheKey,JSON.stringify(result),{EX:300})
     res.json({ data: result });
   } catch (e) {
     next(e);
@@ -101,6 +112,27 @@ async function addRolesList(req, res) {
   try {
     const { name, organization } = req.body;
     const result = await Role.create({ name ,organization});
+    const cacheKey=`roles:${organization}`
+    const cacheRoles=await redisClient.get(cacheKey)
+    if(cacheRoles)
+  {
+       const roles = JSON.parse(cacheRoles);
+    
+      // Add newly created role
+      roles.push(result);
+
+      // Store updated array back in Redis
+      await redisClient.set(
+        cacheKey,
+        JSON.stringify(roles),
+        {
+          EX: 300
+        }
+      );
+  }else{
+    
+    await redisClient.set(cacheKey,JSON.stringify([result]),{EX:300})
+  }
     res.json({ data: result });
   } catch (e) {
     console.log(e);
