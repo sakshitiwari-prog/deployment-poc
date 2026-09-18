@@ -6,6 +6,7 @@ const { Permission } = require("../Schema/Permission");
 const { Role } = require("../Schema/Role");
 const mongoose = require("mongoose");
 const { schoolUser } = require("../Schema/User");
+const {pdfQueue}=require("../bullmq")
 
 const {redisClient}=require("../redis")
 const bcrypt = require("bcrypt");
@@ -117,7 +118,7 @@ async function addRolesList(req, res) {
     if(cacheRoles)
   {
        const roles = JSON.parse(cacheRoles);
-    
+
       // Add newly created role
       roles.push(result);
 
@@ -133,6 +134,11 @@ async function addRolesList(req, res) {
     
     await redisClient.set(cacheKey,JSON.stringify([result]),{EX:300})
   }
+  // 3. Add dummy PDF job to BullMQ
+    await pdfQueue.add("read-pdf", {
+      roleId: result._id.toString(),
+      organization: organization
+    });
     res.json({ data: result });
   } catch (e) {
     console.log(e);

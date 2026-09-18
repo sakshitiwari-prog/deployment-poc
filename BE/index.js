@@ -6,11 +6,14 @@ const { MongoClient } = require("mongodb");
 const cookieParser = require("cookie-parser");
 const promiseFs = require("fs/promises");
 const cors = require("cors");
+
 const multer = require("multer");
 const app = express();
+
 const {connectRedis,redisClient}=require("./redis")
 const dotenv = require("dotenv");
 dotenv.config();
+const pdfWorker=require("./workers/pdfWorker")
 // mongoose 
 const mongoose = require("mongoose");
 app.use(cookieParser());
@@ -41,7 +44,21 @@ app.use(
     })
 );
 // const visitors = {};
+pdfWorker.on("completed", (job, result) => {
+  console.log("================================");
+  console.log("JOB COMPLETED");
+  console.log("Job ID:", job.id);
+  console.log("Result:", result);
+  console.log("================================");
+});
 
+pdfWorker.on("failed", (job, error) => {
+  console.log("================================");
+  console.log("JOB FAILED");
+  console.log("Job ID:", job?.id);
+  console.log("Error:", error.message);
+  console.log("================================");
+});
 // app.use((req, res, next) => {
 //   let visitorId = req.cookies.visitorId;
 
